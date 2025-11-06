@@ -119,6 +119,8 @@ var WIDGETPOOLID_LEGEND = 5;
 var curCountyVol = 35;
 var curRoute = "";
 var curSegment = "";
+var curSUTrkPct = 0;
+var curCUTrkPct = 0;
 
 var cChartOneVol;
 
@@ -726,6 +728,8 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
               curCountyVol = featureAttributes["CO_FIPS"];
               curSegment = featureAttributes["SEGID"];
               curRoute = curSegment.replace(/\_.*/,'');
+              curSUTrkPct = featureAttributes["SUTRK2022"];
+              curCUTrkPct = featureAttributes["CUTRK2022"];
               
               cmbCounty.set('_onChangeActive', false)
               cmbCounty.set('value', curCountyVol)
@@ -1215,6 +1219,7 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
       
       if (curSegment!="") {
         
+        var _truckPctTotal = 0;
         var tSSObs = new StoreSeries(storeObserved, { query: { S: curSegment} }, {x:"Y",y:"O"});
         var tSSFor = new StoreSeries(storeForecasts, { query: { S: curSegment} }, {x:"Y",y:"F"});
         
@@ -1229,6 +1234,9 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
         dom.byId("vol2042value").innerHTML= "--";
         dom.byId("vol2050value").innerHTML= "--";
         
+        dom.byId("sutrkpct").innerHTML = "";
+        dom.byId("cutrkpct").innerHTML = "";
+
         if (tSSObs.data.length>=20 && tSSObs.data[19].y !== undefined) {
           dom.byId("vol2019value").innerHTML= this._NumberWithCommas(tSSObs.data[19].y);
         } else {
@@ -1238,6 +1246,22 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
         for (var i=0; i<tSSFor.data.length; i++) {
           dom.byId("vol" + tSSFor.data[i].x + "value").innerHTML= this._NumberWithCommas(tSSFor.data[i].y);
           
+        }
+
+        if (curSUTrkPct !== null && curSUTrkPct !== undefined) {
+          dom.byId("sutrkpct").innerHTML = "<strong>Single-Unit Trucks: </strong>" + (curSUTrkPct*100).toFixed(1) + "%";
+          _truckPctTotal += curSUTrkPct;
+        }
+
+        if (curCUTrkPct !== null && curCUTrkPct !== undefined) {
+          dom.byId("cutrkpct").innerHTML = "<strong>Combo-Unit Trucks: </strong>" + (curCUTrkPct*100).toFixed(1) + "%";
+          _truckPctTotal += curCUTrkPct;
+        }
+
+        if (_truckPctTotal > 0) {
+          dom.byId("truckinfo").style.display = '';
+        } else {
+          dom.byId("truckinfo").style.display = 'none';
         }
 
         dom.byId("chartAreaVol").style.display = '';
@@ -2298,7 +2322,7 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
       dom.byId("SE_TOGGLEVOL").style.display = 'none';
       dom.byId("UTP_TOGGLEVOL").style.display = '';
       
-      this.map.setInfoWindowOnClick(true); // turn off info window (popup) when clicking a feature
+      this.map.setInfoWindowOnClick(true); // turn on info window (popup) when clicking a feature
 
       this._updateVolToggles();
       this._changeZoom();
