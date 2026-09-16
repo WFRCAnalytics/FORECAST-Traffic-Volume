@@ -110,14 +110,12 @@ let borderWidth;
 let rtpLayers;
 
 require([
-  "esri/config",
   "esri/Map",
   "esri/views/MapView",
   "esri/Basemap",
   "esri/widgets/BasemapToggle",
   "esri/layers/GeoJSONLayer",
   "esri/widgets/Home",
-  "esri/widgets/Search",
   "esri/layers/TileLayer",
   "esri/Graphic",
   "esri/geometry/Point",
@@ -134,14 +132,12 @@ require([
   "esri/rest/support/Query",
   "esri/WebMap",
 ], function (
-  esriConfig,
   Map,
   MapView,
   Basemap,
   BasemapToggle,
   GeoJSONLayer,
   Home,
-  Search,
   TileLayer,
   Graphic,
   Point,
@@ -158,9 +154,6 @@ require([
   Query,
   WebMap
 ) {
-  esriConfig.apiKey =
-    "AAPK5f27bfeca6bb49728b7e12a3bfb8f423zlKckukFK95EWyRa-ie_X31rRIrqzGNoqBH3t3Chvz2aUbTKiDvCPyhvMJumf7Wk";
-
   function matchModelAADT() {
     function removeCommas(str) {
       return str.replace(/,/g, "");
@@ -806,8 +799,28 @@ require([
   function createMapView() {
     console.log("createMapView");
 
+    // The string basemap IDs ("gray-vector", "arcgis-imagery", ...) resolve through Esri's
+    // basemap-styles service, which requires a valid API key. Built the basemaps below from
+    // the classic ArcGIS Online REST tile services instead (server.arcgisonline.com), which
+    // are still public with no key needed and render the same Light Gray Canvas look.
+    const grayBasemap = new Basemap({
+      baseLayers: [
+        new TileLayer({ url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer", title: "Light Gray Base" }),
+        new TileLayer({ url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer", title: "Light Gray Reference" }),
+      ],
+      title: "Light Gray",
+      id: "gray-classic",
+    });
+    const imageryBasemap = new Basemap({
+      baseLayers: [
+        new TileLayer({ url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer", title: "World Imagery" }),
+      ],
+      title: "Imagery",
+      id: "imagery-classic",
+    });
+
     const map = new Map({
-      basemap: "gray-vector", // Basemap layerSegments service
+      basemap: grayBasemap,
     });
 
     view = new MapView({
@@ -1333,7 +1346,7 @@ require([
     // add basemap toggle
     const basemapToggle = new BasemapToggle({
       view: view,
-      nextBasemap: "arcgis-imagery",
+      nextBasemap: imageryBasemap,
     });
     view.ui.add(basemapToggle, "bottom-left");
 
@@ -1367,14 +1380,6 @@ require([
           view.ui.remove(legend);
         }
       });
-
-    // add search widget
-    var searchWidget = new Search({
-      view: view,
-    });
-    view.ui.add(searchWidget, {
-      position: "bottom-right",
-    });
 
     populateSidebar();
   } //createMapView()
