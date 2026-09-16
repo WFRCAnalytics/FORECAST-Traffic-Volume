@@ -48,6 +48,7 @@ var g_iCounty = 0;
 var iPixelSelectionTolerance = 10;
 var segments = [];
 var routes = [];
+var truckdata = [];
 
 var minScaleForLabels = 87804;
 
@@ -119,8 +120,6 @@ var WIDGETPOOLID_LEGEND = 5;
 var curCountyVol = 35;
 var curRoute = "";
 var curSegment = "";
-var curSUTrkPct = 0;
-var curCUTrkPct = 0;
 
 var cChartOneVol;
 
@@ -557,7 +556,21 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
         }
       });
 
-      
+      //Get Truck Data
+      dojo.xhrGet({
+        url: "widgets/ForecastSidebar/data/truckdata.json",
+        handleAs: "json",
+        load: function(obj) {
+          /* here, obj will already be a JS object deserialized from the JSON response */
+          console.log('truckdata.json');
+          truckdata = obj;
+        },
+        error: function(err) {
+            /* this will execute if the response couldn't be converted to a JS object,
+                or if the request was unsuccessful altogether. */
+        }
+      });
+
       //Get Counties
       dojo.xhrGet({
         url: "widgets/ForecastSidebar/data/counties.json",
@@ -728,8 +741,6 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
               curCountyVol = featureAttributes["CO_FIPS"];
               curSegment = featureAttributes["SEGID"];
               curRoute = curSegment.replace(/\_.*/,'');
-              curSUTrkPct = featureAttributes["SUTRK2022"];
-              curCUTrkPct = featureAttributes["CUTRK2022"];
               
               cmbCounty.set('_onChangeActive', false)
               cmbCounty.set('value', curCountyVol)
@@ -1248,13 +1259,16 @@ function(declare, BaseWidget, LayerInfos, RainbowVis, registry, dom, domStyle, d
           
         }
 
-        if (curSUTrkPct !== null && curSUTrkPct !== undefined) {
-          dom.byId("sutrkpct").innerHTML = "<strong>Single-Unit Trucks: </strong>" + (curSUTrkPct*100).toFixed(1) + "%";
+        const curSUTrkPct = truckdata[curSegment]?.SU ?? 0;
+        const curCUTrkPct = truckdata[curSegment]?.CU ?? 0;
+
+        if (curSUTrkPct > 0) {
+          dom.byId("sutrkpct").innerHTML = `<strong>Single-Unit Trucks: </strong>${(curSUTrkPct * 100).toFixed(1)}%`;
           _truckPctTotal += curSUTrkPct;
         }
 
-        if (curCUTrkPct !== null && curCUTrkPct !== undefined) {
-          dom.byId("cutrkpct").innerHTML = "<strong>Combo-Unit Trucks: </strong>" + (curCUTrkPct*100).toFixed(1) + "%";
+        if (curCUTrkPct > 0) {
+          dom.byId("cutrkpct").innerHTML = `<strong>Combo-Unit Trucks: </strong>${(curCUTrkPct * 100).toFixed(1)}%`;
           _truckPctTotal += curCUTrkPct;
         }
 
